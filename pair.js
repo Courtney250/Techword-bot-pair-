@@ -3,167 +3,91 @@ const pastebin = new PastebinAPI('EMWTMkQAVfJa9kM-MRUrxd5Oku1U7pgL');
 const { makeid } = require('./id');
 const express = require('express');
 const fs = require('fs');
+let router = express.Router();
 const pino = require('pino');
 const {
-    default: makeWASocket,
+    default: xhypher_Tech,
     useMultiFileAuthState,
-    fetchLatestBaileysVersion,
     delay,
     makeCacheableSignalKeyStore,
-} = require("@whiskeysockets/baileys");
+    Browsers
+} = require('@whiskeysockets/baileys');
 
-const router = express.Router();
-
-// Helper function to remove files
-function removeFile(filePath) {
-    if (!fs.existsSync(filePath)) return false;
-    fs.rmSync(filePath, { recursive: true, force: true });
+function removeFile(FilePath) {
+    if (!fs.existsSync(FilePath)) return false;
+    fs.rmSync(FilePath, { recursive: true, force: true });
 }
 
-// Custom pairing code generator
-function generateCustomPairingCode() {
-    const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
-    let customCode = '';
-    const codeLength = 8;
-    
-    for (let i = 0; i < codeLength; i++) {
-        customCode += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-    
-    return customCode;
-}
-
-// Predefined custom codes (you can modify this array)
-const predefinedCodes = [
-    'techword', 'courtney', 'chypher2', 'chypher3', 'chypherh',
-    'chypher5', 'chypher6', 'chypher7', 'xhypher8', 'chypher9'
-];
-
-let currentCodeIndex = 0;
-
-function getPredefinedCode() {
-    const code = predefinedCodes[currentCodeIndex];
-    currentCodeIndex = (currentCodeIndex + 1) % predefinedCodes.length;
-    return code;
-}
-
-// Route handler
 router.get('/', async (req, res) => {
     const id = makeid();
     let num = req.query.number;
-    const usePredefined = req.query.predefined === 'true'; // Optional parameter to use predefined codes
-
-    async function RAVEN() {
-        const { version } = await fetchLatestBaileysVersion();
+    
+    async function xhypher_MD_PAIR_CODE() {
         const { state, saveCreds } = await useMultiFileAuthState('./temp/' + id);
         try {
-            const client = makeWASocket({
-                printQRInTerminal: false,
-                version,
-                logger: pino({
-                    level: 'silent',
-                }),
-                browser: ['Ubuntu', 'Chrome', '20.0.04'],
+            let Pair_Code_By_xhypher_Tech = xhypher_Tech({
                 auth: {
-                    ...state,
-                    creds: {
-                        ...state.creds,
-                        // Add any custom authentication properties here if needed
-                    }
+                    creds: state.creds,
+                    keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'fatal' }).child({ level: 'fatal' })),
                 },
+                version: [2, 3000, 1027934701],
+                printQRInTerminal: false,
+                logger: pino({ level: 'fatal' }).child({ level: 'fatal' }),
+                browser: ["Windows", "Firefox", "130.0.1"],
             });
 
-            if (!client.authState.creds.registered) {
+            if (!Pair_Code_By_xhypher_Tech.authState.creds.registered) {
                 await delay(1500);
                 num = num.replace(/[^0-9]/g, '');
-                
-                // Generate custom pairing code
-                const customCode = usePredefined ? getPredefinedCode() : generateCustomPairingCode();
-                
-                console.log(`Generated custom pairing code: ${customCode}`);
-                
-                try {
-                    // Request the actual pairing code from WhatsApp
-                    const whatsappCode = await client.requestPairingCode(num);
-                    console.log(`WhatsApp generated code: ${whatsappCode}`);
-                    
-                    // Send custom code to client instead of WhatsApp's code
-                    if (!res.headersSent) {
-                        await res.send({ 
-                            code: customCode,
-                            whatsapp_code: whatsappCode, // Optional: include actual code for reference
-                            message: 'Use this custom code for pairing'
-                        });
-                    }
-                } catch (error) {
-                    console.log('Error requesting pairing code, using custom code only:', error);
-                    if (!res.headersSent) {
-                        await res.send({ 
-                            code: customCode,
-                            message: 'Custom pairing code generated'
-                        });
-                    }
+               const custom = "TECHWORD";
+                const code = await Pair_Code_By_xhypher_Tech.requestPairingCode(num,custom);
+                if (!res.headersSent) {
+                    await res.send({ code });
                 }
             }
 
-            client.ev.on('creds.update', saveCreds);
-            client.ev.on('connection.update', async (s) => {
+            Pair_Code_By_xhypher_Tech.ev.on('creds.update', saveCreds);
+            Pair_Code_By_xhypher_Tech.ev.on('connection.update', async (s) => {
                 const { connection, lastDisconnect } = s;
                 if (connection === 'open') {
-                    await client.sendMessage(client.user.id, { text: `Generating your session_id, Wait . .` });
-                    await delay(6000);
-                    
-                    const data = fs.readFileSync(__dirname + `/temp/${id}/creds.json`);
+                    await Pair_Code_By_xhypher_Tech.newsletterFollow("120363403744025696@newsletter");
+                    await Pair_Code_By_xhypher_Tech.newsletterFollow("120363409714698622@newsletter");
+                    await Pair_Code_By_xhypher_Tech.newsletterFollow("120363422266851455@newsletter");
                     await delay(5000);
-                    const b64data = Buffer.from(data).toString('base64');
-                    const session = await client.sendMessage(client.user.id, { text: 'TECHWORLD:~' + b64data });
+                    let data = fs.readFileSync(__dirname + `/temp/${id}/creds.json`);
+                    await delay(1000);
+                    let b64data = Buffer.from(data).toString('base64');
+                    let session = await Pair_Code_By_xhypher_Tech.sendMessage(Pair_Code_By_xhypher_Tech.user.id, { text: 'TECHWORLD:~' + b64data });
 
-                    // Send message after session
-                    await client.sendMessage(client.user.id, {text: `
+                    let xhypher_MD_TEXT = `
 ╔════════════════════
 ║ ◇ SESSION CONNECTED ◇
 ║ ✓ BOT: TECHWORD-X
 ║ ✓ TYPE: BASE64
 ║ ✓ OWNER: COURTNEY 🦅 
 ║ ✓SUPPORT: https://t.me/Courtney254
-╚════════════════════` }, { quoted: session });
-                    
+╚════════════════════`;
+
+                    await Pair_Code_By_xhypher_Tech.sendMessage(Pair_Code_By_xhypher_Tech.user.id, { text: xhypher_MD_TEXT }, { quoted: session });
+
                     await delay(100);
-                    await client.ws.close();
-                    removeFile('./temp/' + id);
-                } else if (connection === 'close' && lastDisconnect && lastDisconnect.error && lastDisconnect.error.output.statusCode !== 401) {
-                    console.log('Connection closed, restarting...');
+                    await Pair_Code_By_xhypher_Tech.ws.close();
+                    return await removeFile('./temp/' + id);
+                } else if (connection === 'close' && lastDisconnect && lastDisconnect.error && lastDisconnect.error.output.statusCode != 401) {
                     await delay(10000);
-                    RAVEN();
-                } else if (connection === 'connecting') {
-                    console.log('Connecting to WhatsApp...');
+                    xhypher_MD_PAIR_CODE();
                 }
             });
         } catch (err) {
-            console.log('Service error:', err);
-            removeFile('./temp/' + id);
+            console.log('Service restarted');
+            await removeFile('./temp/' + id);
             if (!res.headersSent) {
-                await res.send({ 
-                    code: 'Service Currently Unavailable',
-                    error: err.message 
-                });
+                await res.send({ code: 'Service Currently Unavailable' });
             }
         }
     }
-
-    await RAVEN();
-});
-
-// Additional route to get custom codes only
-router.get('/generate-code', async (req, res) => {
-    const usePredefined = req.query.predefined === 'true';
-    const customCode = usePredefined ? getPredefinedCode() : generateCustomPairingCode();
     
-    res.send({
-        custom_code: customCode,
-        type: usePredefined ? 'predefined' : 'random',
-        available_codes: predefinedCodes
-    });
+    return await xhypher_MD_PAIR_CODE();
 });
 
 module.exports = router;
