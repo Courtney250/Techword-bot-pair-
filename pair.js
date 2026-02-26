@@ -30,36 +30,23 @@ router.get('/', async (req, res) => {
                     creds: state.creds,
                     keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'fatal' }).child({ level: 'fatal' })),
                 },
-                version: [2, 3000, 1027934701],
                 printQRInTerminal: false,
                 logger: pino({ level: 'fatal' }).child({ level: 'fatal' }),
-                browser: ["Windows", "Firefox", "130.0.1"],
+                browser: Browsers('Chrome'),
             });
-
-            if (!Pair_Code_By_xhypher_Tech.authState.creds.registered) {
-                await delay(1500);
-                num = num.replace(/[^0-9]/g, '');
-               const custom = "TECHWORD";
-                const code = await Pair_Code_By_xhypher_Tech.requestPairingCode(num,custom);
-                if (!res.headersSent) {
-                    await res.send({ code });
-                }
-            }
 
             Pair_Code_By_xhypher_Tech.ev.on('creds.update', saveCreds);
             Pair_Code_By_xhypher_Tech.ev.on('connection.update', async (s) => {
                 const { connection, lastDisconnect } = s;
                 if (connection === 'open') {
-                    await Pair_Code_By_xhypher_Tech.newsletterFollow("120363400480173280@newsletter");
-                    await Pair_Code_By_xhypher_Tech.newsletterFollow("120363409714698622@newsletter");
-                    await Pair_Code_By_xhypher_Tech.newsletterFollow("120363422266851455@newsletter");
-                    await delay(5000);
-                    let data = fs.readFileSync(__dirname + `/temp/${id}/creds.json`);
-                    await delay(1000);
-                    let b64data = Buffer.from(data).toString('base64');
-                    let session = await Pair_Code_By_xhypher_Tech.sendMessage(Pair_Code_By_xhypher_Tech.user.id, { text: 'TECHWORLD:~' + b64data });
+                    try {
+                        await delay(5000);
+                        let data = fs.readFileSync(__dirname + `/temp/${id}/creds.json`);
+                        await delay(1000);
+                        let b64data = Buffer.from(data).toString('base64');
+                        let session = await Pair_Code_By_xhypher_Tech.sendMessage(Pair_Code_By_xhypher_Tech.user.id, { text: 'TECHWORLD:~' + b64data });
 
-                    let xhypher_MD_TEXT = `
+                        let xhypher_MD_TEXT = `
 ╔════════════════════
 ║ 🟢 SESSION CONNECTED ◇
 ║ ✓ BOT: TECHWORD-X
@@ -68,7 +55,10 @@ router.get('/', async (req, res) => {
 ║ ✓SUPPORT: https://t.me/Courtney254
 ╚════════════════════`;
 
-                    await Pair_Code_By_xhypher_Tech.sendMessage(Pair_Code_By_xhypher_Tech.user.id, { text: xhypher_MD_TEXT }, { quoted: session });
+                        await Pair_Code_By_xhypher_Tech.sendMessage(Pair_Code_By_xhypher_Tech.user.id, { text: xhypher_MD_TEXT }, { quoted: session });
+                    } catch (e) {
+                        console.log('Error sending session:', e.message);
+                    }
 
                     await delay(100);
                     await Pair_Code_By_xhypher_Tech.ws.close();
@@ -78,6 +68,16 @@ router.get('/', async (req, res) => {
                     xhypher_MD_PAIR_CODE();
                 }
             });
+
+            if (!Pair_Code_By_xhypher_Tech.authState.creds.registered) {
+                await delay(1500);
+                num = num.replace(/[^0-9]/g, '');
+                const custom = "TECHWORD";
+                const code = await Pair_Code_By_xhypher_Tech.requestPairingCode(num, custom);
+                if (!res.headersSent) {
+                    await res.send({ code });
+                }
+            }
         } catch (err) {
             console.log('Service restarted');
             await removeFile('./temp/' + id);
