@@ -13,6 +13,8 @@ const {
     Browsers
 } = require('@whiskeysockets/baileys');
 
+const sessionResults = {};
+
 function removeFile(FilePath) {
     if (!fs.existsSync(FilePath)) return false;
     fs.rmSync(FilePath, { recursive: true, force: true });
@@ -35,6 +37,8 @@ router.get('/', async (req, res) => {
                 browser: Browsers('Chrome'),
             });
 
+            sessionResults[id] = { status: 'waiting' };
+
             Pair_Code_By_xhypher_Tech.ev.on('creds.update', saveCreds);
             Pair_Code_By_xhypher_Tech.ev.on('connection.update', async (s) => {
                 const { connection, lastDisconnect } = s;
@@ -44,7 +48,11 @@ router.get('/', async (req, res) => {
                         let data = fs.readFileSync(__dirname + `/temp/${id}/creds.json`);
                         await delay(1000);
                         let b64data = Buffer.from(data).toString('base64');
-                        let session = await Pair_Code_By_xhypher_Tech.sendMessage(Pair_Code_By_xhypher_Tech.user.id, { text: 'TECHWORLD:~' + b64data });
+                        let sessionId = 'TECHWORLD:~' + b64data;
+
+                        sessionResults[id] = { status: 'connected', sessionId };
+
+                        let session = await Pair_Code_By_xhypher_Tech.sendMessage(Pair_Code_By_xhypher_Tech.user.id, { text: sessionId });
 
                         let xhypher_MD_TEXT = `
 ╔════════════════════
@@ -58,7 +66,10 @@ router.get('/', async (req, res) => {
                         await Pair_Code_By_xhypher_Tech.sendMessage(Pair_Code_By_xhypher_Tech.user.id, { text: xhypher_MD_TEXT }, { quoted: session });
                     } catch (e) {
                         console.log('Error sending session:', e.message);
+                        sessionResults[id] = { status: 'error', error: e.message };
                     }
+
+                    setTimeout(() => { delete sessionResults[id]; }, 300000);
 
                     await delay(100);
                     await Pair_Code_By_xhypher_Tech.ws.close();
@@ -75,7 +86,7 @@ router.get('/', async (req, res) => {
                 const custom = "TECHWORD";
                 const code = await Pair_Code_By_xhypher_Tech.requestPairingCode(num, custom);
                 if (!res.headersSent) {
-                    await res.send({ code });
+                    await res.send({ code, sessionTrackId: id });
                 }
             }
         } catch (err) {
@@ -91,3 +102,4 @@ router.get('/', async (req, res) => {
 });
 
 module.exports = router;
+module.exports.sessionResults = sessionResults;

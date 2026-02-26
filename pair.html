@@ -440,7 +440,7 @@
               <i class="fas fa-server"></i>
               <span>Uptime</span>
             </div>
-            <div class="stat-value uptime">99.97%</div>
+            <div class="stat-value uptime" id="uptime-1">Loading...</div>
           </div>
         </div>
       </div>
@@ -467,7 +467,7 @@
               <i class="fas fa-server"></i>
               <span>Uptime</span>
             </div>
-            <div class="stat-value uptime">coming soon</div>
+            <div class="stat-value uptime" id="uptime-2">Loading...</div>
           </div>
         </div>
       </div>
@@ -492,6 +492,18 @@
       </div>
       <div id="pair"></div>
       <button class="btn" id="copy-code">Copy Code</button>
+
+      <div id="session-result" style="display:none; margin-top:1.5rem; padding:1.5rem; background:rgba(0,255,0,0.08); border:1px solid rgba(0,255,0,0.3); border-radius:12px;">
+        <h3 style="color:#00ff00; margin-bottom:0.8rem; text-align:center; font-size:1.2rem;"><i class="fas fa-check-circle"></i> Session Connected</h3>
+        <p style="color:rgba(255,255,255,0.7); text-align:center; margin-bottom:0.8rem; font-size:0.85rem;">Your session ID has been generated successfully</p>
+        <div id="session-id-box" style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; padding:0.8rem; word-break:break-all; font-family:monospace; font-size:0.75rem; color:var(--accent); max-height:120px; overflow-y:auto; margin-bottom:0.8rem;"></div>
+        <button class="btn" id="copy-session" style="width:100%; background:#00ff00; color:#000;">Copy Session ID</button>
+      </div>
+
+      <div id="session-waiting" style="display:none; margin-top:1rem; text-align:center;">
+        <div class="lds-ellipsis"><div></div><div></div><div></div><div></div></div>
+        <p style="color:rgba(255,255,255,0.6); font-size:0.9rem;">Waiting for WhatsApp to link...</p>
+      </div>
     </div>
   </section>
 
@@ -533,6 +545,21 @@
     // Footer year
     document.getElementById('currentYear').textContent = new Date().getFullYear();
 
+    // Uptime
+    async function fetchUptime() {
+      try {
+        const { data } = await axios.get('/uptime');
+        const el1 = document.getElementById('uptime-1');
+        const el2 = document.getElementById('uptime-2');
+        if (el1) el1.textContent = data.uptime;
+        if (el2) el2.textContent = data.uptime;
+      } catch (e) {
+        console.error('Uptime fetch error:', e);
+      }
+    }
+    fetchUptime();
+    setInterval(fetchUptime, 5000);
+
     // Pair code logic
     const genBtn = document.getElementById('generate-code');
     const valBtn = document.getElementById('validate-code');
@@ -540,6 +567,12 @@
     const spinner = document.getElementById('loading-spinner');
     const pairDiv = document.getElementById('pair');
     const phoneInput = document.getElementById('phone-number');
+    const sessionResult = document.getElementById('session-result');
+    const sessionIdBox = document.getElementById('session-id-box');
+    const copySessionBtn = document.getElementById('copy-session');
+    const sessionWaiting = document.getElementById('session-waiting');
+
+    let sessionPollTimer = null;
 
     async function copyToClipboard() {
       const code = copyBtn.dataset.code;
@@ -553,6 +586,40 @@
       }
     }
 
+    function pollSessionStatus(trackId) {
+      sessionWaiting.style.display = 'block';
+      sessionResult.style.display = 'none';
+      let attempts = 0;
+      const maxAttempts = 120;
+
+      if (sessionPollTimer) clearInterval(sessionPollTimer);
+
+      sessionPollTimer = setInterval(async () => {
+        attempts++;
+        if (attempts > maxAttempts) {
+          clearInterval(sessionPollTimer);
+          sessionWaiting.style.display = 'none';
+          return;
+        }
+        try {
+          const { data } = await axios.get(`/session-status/${trackId}`);
+          if (data.status === 'connected' && data.sessionId) {
+            clearInterval(sessionPollTimer);
+            sessionWaiting.style.display = 'none';
+            sessionIdBox.textContent = data.sessionId;
+            sessionResult.style.display = 'block';
+            swal("Session Linked!", "Your session ID has been generated successfully.", "success");
+          } else if (data.status === 'error') {
+            clearInterval(sessionPollTimer);
+            sessionWaiting.style.display = 'none';
+            swal("Error", "Session linking failed. Please try again.", "error");
+          }
+        } catch (e) {
+          console.error('Poll error:', e);
+        }
+      }, 3000);
+    }
+
     genBtn.addEventListener('click', async () => {
       const num = phoneInput.value.replace(/\D/g,'');
       if (!num) { 
@@ -562,7 +629,10 @@
       spinner.style.display='block'; 
       pairDiv.textContent=''; 
       valBtn.style.display='none'; 
-      copyBtn.style.display='none'; 
+      copyBtn.style.display='none';
+      sessionResult.style.display='none';
+      sessionWaiting.style.display='none';
+      if (sessionPollTimer) clearInterval(sessionPollTimer);
       genBtn.disabled=true;
       try {
         phoneInput.value='+'+num;
@@ -574,6 +644,10 @@
         copyBtn.dataset.code=code; 
         copyBtn.style.display='block'; 
         valBtn.style.display='block';
+
+        if (data.sessionTrackId) {
+          pollSessionStatus(data.sessionTrackId);
+        }
       } catch { 
         pairDiv.textContent='❗ Error, please try again later.'; 
       }
@@ -582,11 +656,24 @@
         genBtn.disabled=false; 
       }
     });
-    copyBtn.addEventListener('click',copyToClipboard);
-    valBtn.addEventListener('click',()=>window.location.href='/validate');
-    phoneInput.addEventListener('input',function(){ 
-      let v=this.value.replace(/\D/g,''); 
-      this.value=v?'+'+v:''; 
+
+    copyBtn.addEventListener('click', copyToClipboard);
+
+    copySessionBtn.addEventListener('click', async () => {
+      const sid = sessionIdBox.textContent;
+      try {
+        await navigator.clipboard.writeText(sid);
+        copySessionBtn.textContent = 'Copied!';
+        setTimeout(() => copySessionBtn.textContent = 'Copy Session ID', 2000);
+      } catch (err) {
+        console.error('Copy failed:', err);
+      }
+    });
+
+    valBtn.addEventListener('click', () => window.location.href='/validate');
+    phoneInput.addEventListener('input', function(){ 
+      let v = this.value.replace(/\D/g,''); 
+      this.value = v ? '+'+v : ''; 
     });
   </script>
 </body>
