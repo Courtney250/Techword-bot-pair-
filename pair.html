@@ -725,6 +725,8 @@
     const rCtx = rainCanvas.getContext('2d');
     let rainDrops = [];
     let rainActive = true;
+    let snowFlakes = [];
+    let snowActive = false;
 
     function resizeRain() {
       rainCanvas.width = window.innerWidth;
@@ -815,10 +817,6 @@
     const seasonOrder = ['rainy', 'sunny', 'snow', 'forest'];
 
     particlesJS("particles-js", rainyParticles);
-
-    // Snow canvas
-    let snowFlakes = [];
-    let snowActive = false;
 
     function initSnow() {
       snowFlakes = [];
