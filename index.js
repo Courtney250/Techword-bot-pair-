@@ -22,6 +22,49 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use('/code', code);
+
+app.get('/validate', (req, res) => {
+    res.sendFile(__path + '/validate.html');
+});
+
+app.post('/validate-session', (req, res) => {
+    const { sessionId } = req.body;
+    if (!sessionId || typeof sessionId !== 'string') {
+        return res.json({ valid: false, error: 'No session ID provided' });
+    }
+
+    const trimmed = sessionId.trim();
+    const prefix = 'TRUTH-MD:~';
+
+    if (!trimmed.startsWith(prefix)) {
+        return res.json({ valid: false, error: 'Missing or incorrect prefix. Must start with TRUTH-MD:~' });
+    }
+
+    const b64Part = trimmed.slice(prefix.length);
+    if (!b64Part || b64Part.length < 10) {
+        return res.json({ valid: false, error: 'Session data is too short or empty' });
+    }
+
+    try {
+        const decoded = Buffer.from(b64Part, 'base64').toString('utf8');
+        const creds = JSON.parse(decoded);
+
+        const hasPhoneId = !!(creds.me && creds.me.id);
+        const hasKeys = !!(creds.noiseKey || creds.signedIdentityKey || creds.advSecretKey);
+        const dataSize = Math.round(b64Part.length / 1024 * 100) / 100 + ' KB';
+
+        return res.json({
+            valid: true,
+            prefix: 'TRUTH-MD',
+            hasPhoneId,
+            hasKeys,
+            dataSize
+        });
+    } catch (e) {
+        return res.json({ valid: false, error: 'Invalid Base64 or corrupted session data' });
+    }
+});
+
 app.use('/', async (req, res, next) => {
     if (req.path === '/' || req.path === '/pair') {
         return res.sendFile(__path + '/pair.html');
