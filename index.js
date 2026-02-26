@@ -12,8 +12,11 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use('/code', code);
-app.use('/pair', async (req, res, next) => {
-    res.sendFile(__path + '/pair.html')
+app.use('/', async (req, res, next) => {
+    if (req.path === '/' || req.path === '/pair') {
+        return res.sendFile(__path + '/pair.html');
+    }
+    next();
 });
 
 app.get('/uptime', (req, res) => {

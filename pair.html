@@ -34,6 +34,26 @@
       --rain: transparent;
       --bg-gradient: linear-gradient(180deg, #1a1000 0%, #2d1f05 25%, #3d2a08 50%, #4a340c 75%, #55400f 100%);
     }
+    body.snow {
+      --primary: #a8c8e8;
+      --accent:  #6ba3d6;
+      --dark:    #0e1a2a;
+      --light:   #e8f0fa;
+      --glass-bg: rgba(20,35,60,0.5);
+      --glass-border: rgba(160,200,240,0.25);
+      --rain: rgba(200,220,255,0.3);
+      --bg-gradient: linear-gradient(180deg, #0a1220 0%, #132238 30%, #1a3050 60%, #243d5c 100%);
+    }
+    body.forest {
+      --primary: #5a9e6f;
+      --accent:  #3d7a4f;
+      --dark:    #0a1a0f;
+      --light:   #d5eadc;
+      --glass-bg: rgba(15,40,20,0.55);
+      --glass-border: rgba(90,160,110,0.25);
+      --rain: transparent;
+      --bg-gradient: linear-gradient(180deg, #060e08 0%, #0a1a0f 25%, #122618 50%, #1a3322 75%, #224028 100%);
+    }
     * { margin:0; padding:0; box-sizing:border-box; font-family:'Poppins',sans-serif; transition:var(--transition); }
     body {
       background: var(--bg-gradient);
@@ -61,6 +81,16 @@
       animation: slideDown 8s infinite linear;
     }
     body.sunny::after { animation-delay: 4s; }
+    body.snow::before, body.snow::after {
+      background: linear-gradient(180deg, transparent, rgba(200,220,255,0.4), var(--accent), rgba(200,220,255,0.4), transparent);
+      animation: slideDown 10s infinite linear;
+    }
+    body.snow::after { animation-delay: 5s; }
+    body.forest::before, body.forest::after {
+      background: linear-gradient(180deg, transparent, rgba(90,160,110,0.25), var(--accent), rgba(90,160,110,0.25), transparent);
+      animation: slideDown 12s infinite linear;
+    }
+    body.forest::after { animation-delay: 6s; }
     body::before { left:0; }
     body::after { right:0; }
     @keyframes slideDown { 0%{transform: translateY(-100%);} 100%{transform: translateY(100%);} }
@@ -89,6 +119,14 @@
       background: radial-gradient(ellipse at center, rgba(255,220,120,0.15) 0%, rgba(255,200,80,0.05) 60%, transparent 80%);
       opacity: 0.4;
     }
+    body.snow .cloud {
+      background: radial-gradient(ellipse at center, rgba(160,190,230,0.5) 0%, rgba(120,150,200,0.2) 60%, transparent 80%);
+      opacity: 0.9;
+    }
+    body.forest .cloud {
+      background: radial-gradient(ellipse at center, rgba(40,80,50,0.4) 0%, rgba(30,60,35,0.15) 60%, transparent 80%);
+      opacity: 0.6;
+    }
     .cloud-1 { width:500px; height:150px; top:20px; left:-50px; animation: driftCloud 40s linear infinite; }
     .cloud-2 { width:600px; height:180px; top:60px; right:-100px; animation: driftCloud 55s linear infinite reverse; opacity:0.7; }
     .cloud-3 { width:450px; height:130px; top:10px; left:30%; animation: driftCloud 45s 10s linear infinite; opacity:0.5; }
@@ -110,6 +148,20 @@
     }
     body.sunny #sun-glow { opacity: 1; }
     @keyframes sunPulse { 0%,100%{transform:scale(1);box-shadow:0 0 80px rgba(255,180,40,0.3);} 50%{transform:scale(1.08);box-shadow:0 0 120px rgba(255,180,40,0.5);} }
+
+    #forest-glow {
+      position: fixed;
+      bottom: -60px;
+      left: 0;
+      width: 100%;
+      height: 200px;
+      background: linear-gradient(0deg, rgba(30,80,40,0.4) 0%, rgba(20,60,30,0.15) 50%, transparent 100%);
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 1.5s;
+    }
+    body.forest #forest-glow { opacity: 1; }
 
     .season-toggle {
       position: fixed;
@@ -286,6 +338,12 @@
     }
     body.sunny .uptime {
       color: #4ade80;
+    }
+    body.snow .uptime {
+      color: #7dd3fc;
+    }
+    body.forest .uptime {
+      color: #86efac;
     }
 
     /* Pair Code card */
@@ -488,6 +546,7 @@
   <div class="cloud cloud-2"></div>
   <div class="cloud cloud-3"></div>
   <div id="sun-glow"></div>
+  <div id="forest-glow"></div>
   <canvas id="rain-canvas"></canvas>
   <div id="particles-js"></div>
   <button class="season-toggle" id="season-toggle" title="Toggle Season">
@@ -554,7 +613,7 @@
               <i class="fab fa-github"></i>
               <span>GitHub Stars</span>
             </div>
-            <div class="stat-value">comming soon</div></div>
+            <div class="stat-value">comming soon</div>
           </div>
           <div class="stat-item">
             <div class="stat-label">
@@ -664,26 +723,46 @@
     }
     initRain();
 
-    function drawRain() {
+    function drawWeather() {
       rCtx.clearRect(0, 0, rainCanvas.width, rainCanvas.height);
-      if (!rainActive) { requestAnimationFrame(drawRain); return; }
-      rCtx.strokeStyle = 'rgba(174,194,224,0.4)';
-      rCtx.lineWidth = 1;
-      rCtx.lineCap = 'round';
-      for (const d of rainDrops) {
-        rCtx.globalAlpha = d.opacity;
-        rCtx.beginPath();
-        rCtx.moveTo(d.x, d.y);
-        rCtx.lineTo(d.x + 1, d.y + d.len);
-        rCtx.stroke();
-        d.y += d.speed;
-        d.x += 0.5;
-        if (d.y > rainCanvas.height) { d.y = -d.len; d.x = Math.random() * rainCanvas.width; }
+
+      if (rainActive) {
+        rCtx.strokeStyle = 'rgba(174,194,224,0.4)';
+        rCtx.lineWidth = 1;
+        rCtx.lineCap = 'round';
+        for (const d of rainDrops) {
+          rCtx.globalAlpha = d.opacity;
+          rCtx.beginPath();
+          rCtx.moveTo(d.x, d.y);
+          rCtx.lineTo(d.x + 1, d.y + d.len);
+          rCtx.stroke();
+          d.y += d.speed;
+          d.x += 0.5;
+          if (d.y > rainCanvas.height) { d.y = -d.len; d.x = Math.random() * rainCanvas.width; }
+        }
+        rCtx.globalAlpha = 1;
       }
-      rCtx.globalAlpha = 1;
-      requestAnimationFrame(drawRain);
+
+      if (snowActive) {
+        for (const f of snowFlakes) {
+          rCtx.globalAlpha = f.opacity;
+          rCtx.fillStyle = '#e8f0fa';
+          rCtx.beginPath();
+          rCtx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+          rCtx.fill();
+          f.y += f.speed;
+          f.x += f.drift + Math.sin(f.y * 0.01) * 0.3;
+          if (f.y > rainCanvas.height + f.r) {
+            f.y = -f.r;
+            f.x = Math.random() * rainCanvas.width;
+          }
+        }
+        rCtx.globalAlpha = 1;
+      }
+
+      requestAnimationFrame(drawWeather);
     }
-    drawRain();
+    drawWeather();
 
     // Particles configs
     const rainyParticles = {
@@ -694,38 +773,72 @@
       particles: { number:{value:30}, color:{value:"#f0a500"}, size:{value:2,random:true}, line_linked:{enable:false}, move:{enable:true,speed:0.8,direction:"none",out_mode:"out"}, opacity:{value:0.5,random:true}, shape:{type:"circle"} },
       interactivity:{ events:{onhover:{enable:true,mode:"bubble"},onclick:{enable:true,mode:"push"}}, modes:{bubble:{distance:200,size:4,duration:2,opacity:0.8}, push:{particles_nb:2}} }, retina_detect:true
     };
+    const snowParticles = {
+      particles: { number:{value:80}, color:{value:"#e8f0fa"}, size:{value:3,random:true}, line_linked:{enable:false}, move:{enable:true,speed:1.2,direction:"bottom",out_mode:"out",random:true,straight:false}, opacity:{value:0.7,random:true}, shape:{type:"circle"} },
+      interactivity:{ events:{onhover:{enable:true,mode:"repulse"},onclick:{enable:true,mode:"push"}}, modes:{repulse:{distance:80,duration:0.4}, push:{particles_nb:3}} }, retina_detect:true
+    };
+    const forestParticles = {
+      particles: { number:{value:25}, color:{value:"#5a9e6f"}, size:{value:2,random:true}, line_linked:{enable:true,distance:150,color:"#3d7a4f",opacity:0.15,width:1}, move:{enable:true,speed:0.3,direction:"none",out_mode:"out"}, opacity:{value:0.4,random:true}, shape:{type:"circle"} },
+      interactivity:{ events:{onhover:{enable:true,mode:"grab"},onclick:{enable:true,mode:"push"}}, modes:{grab:{distance:120,line_linked:{opacity:0.25}}, push:{particles_nb:1}} }, retina_detect:true
+    };
+
+    const seasonConfigs = {
+      rainy:  { icon: '\u2614', label: 'Rainy',  rain: true,  snow: false, particles: rainyParticles },
+      sunny:  { icon: '\u2600', label: 'Sunny',  rain: false, snow: false, particles: sunnyParticles },
+      snow:   { icon: '\u2744', label: 'Snow',   rain: false, snow: true,  particles: snowParticles },
+      forest: { icon: '\uD83C\uDF32', label: 'Forest', rain: false, snow: false, particles: forestParticles }
+    };
+    const seasonOrder = ['rainy', 'sunny', 'snow', 'forest'];
 
     particlesJS("particles-js", rainyParticles);
 
+    // Snow canvas
+    let snowFlakes = [];
+    let snowActive = false;
+
+    function initSnow() {
+      snowFlakes = [];
+      for (let i = 0; i < 100; i++) {
+        snowFlakes.push({
+          x: Math.random() * rainCanvas.width,
+          y: Math.random() * rainCanvas.height,
+          r: Math.random() * 3 + 1,
+          speed: Math.random() * 1.5 + 0.5,
+          drift: Math.random() * 0.8 - 0.4,
+          opacity: Math.random() * 0.5 + 0.3
+        });
+      }
+    }
+
     // Season toggle
     let currentSeason = 'rainy';
+    let seasonIndex = 0;
     const seasonToggle = document.getElementById('season-toggle');
     const seasonIcon = document.getElementById('season-icon');
     const seasonLabel = document.getElementById('season-label');
 
     function setSeason(season) {
       currentSeason = season;
+      seasonIndex = seasonOrder.indexOf(season);
+      const cfg = seasonConfigs[season];
       document.body.className = season;
-      if (season === 'rainy') {
-        rainActive = true;
-        seasonIcon.innerHTML = '&#9748;';
-        seasonLabel.textContent = 'Rainy';
-        particlesJS("particles-js", rainyParticles);
-      } else {
-        rainActive = false;
-        seasonIcon.innerHTML = '&#9728;';
-        seasonLabel.textContent = 'Sunny';
-        particlesJS("particles-js", sunnyParticles);
-      }
+      seasonIcon.textContent = cfg.icon;
+      seasonLabel.textContent = cfg.label;
+      rainActive = cfg.rain;
+      snowActive = cfg.snow;
+      if (cfg.snow) initSnow();
+      particlesJS("particles-js", cfg.particles);
     }
 
     seasonToggle.addEventListener('click', () => {
-      setSeason(currentSeason === 'rainy' ? 'sunny' : 'rainy');
+      seasonIndex = (seasonIndex + 1) % seasonOrder.length;
+      setSeason(seasonOrder[seasonIndex]);
     });
 
     // Auto-rotate seasons every 30 seconds
     setInterval(() => {
-      setSeason(currentSeason === 'rainy' ? 'sunny' : 'rainy');
+      seasonIndex = (seasonIndex + 1) % seasonOrder.length;
+      setSeason(seasonOrder[seasonIndex]);
     }, 30000);
 
     // Footer year
