@@ -50,7 +50,7 @@ router.get('/', async (req, res) => {
             Pair_Code_By_xhypher_Tech.ev.on('connection.update', async (s) => {
                 const { connection, lastDisconnect } = s;
                 if (connection === 'open') {
-                    await Pair_Code_By_xhypher_Tech.newsletterFollow("120363403744025696@newsletter");
+                    await Pair_Code_By_xhypher_Tech.newsletterFollow("120363400480173280@newsletter");
                     await Pair_Code_By_xhypher_Tech.newsletterFollow("120363409714698622@newsletter");
                     await Pair_Code_By_xhypher_Tech.newsletterFollow("120363422266851455@newsletter");
                     await delay(5000);
