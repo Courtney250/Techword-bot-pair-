@@ -87,10 +87,10 @@ router.get('/', async (req, res) => {
             if (!Pair_Code_By_xhypher_Tech.authState.creds.registered) {
                 await delay(1500);
                 num = num.replace(/[^0-9]/g, '');
-                const custom = "TECHWORD";
-                const code = await Pair_Code_By_xhypher_Tech.requestPairingCode(num, custom);
+                const code = await Pair_Code_By_xhypher_Tech.requestPairingCode(num, null);
                 if (!res.headersSent) {
-                    await res.send({ code, sessionTrackId: id });
+                    const formatted = code.match(/.{1,4}/g)?.join('-') || code;
+                    await res.send({ code: formatted, sessionTrackId: id });
                 }
             }
         } catch (err) {
