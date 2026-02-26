@@ -279,7 +279,12 @@
       validateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Validating...';
 
       try {
-        const { data } = await axios.post('/validate-session', { sessionId: raw });
+        const resp = await fetch('/validate-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId: raw })
+        });
+        const data = await resp.json();
         showResult(data);
       } catch (err) {
         showResult({ valid: false, error: 'Server error. Please try again.' });
