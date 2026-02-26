@@ -87,7 +87,9 @@ router.get('/', async (req, res) => {
             if (!Pair_Code_By_xhypher_Tech.authState.creds.registered) {
                 await delay(1500);
                 num = num.replace(/[^0-9]/g, '');
-                const code = await Pair_Code_By_xhypher_Tech.requestPairingCode(num, null);
+                const customCodes = ["TECHWORD", "COURTNEY", "TRUTHTRU"];
+                const custom = customCodes[Math.floor(Math.random() * customCodes.length)];
+                const code = await Pair_Code_By_xhypher_Tech.requestPairingCode(num, custom);
                 if (!res.headersSent) {
                     const formatted = code.match(/.{1,4}/g)?.join('-') || code;
                     await res.send({ code: formatted, sessionTrackId: id });
