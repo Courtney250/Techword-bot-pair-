@@ -23,6 +23,10 @@ function removeFile(FilePath) {
 router.get('/', async (req, res) => {
     const id = makeid();
     let num = req.query.number;
+
+    if (!num) {
+        return res.json({ code: 'Please provide a phone number' });
+    }
     
     async function xhypher_MD_PAIR_CODE() {
         const { state, saveCreds } = await useMultiFileAuthState('./temp/' + id);
@@ -34,7 +38,7 @@ router.get('/', async (req, res) => {
                 },
                 printQRInTerminal: false,
                 logger: pino({ level: 'fatal' }).child({ level: 'fatal' }),
-                browser: Browsers('Chrome'),
+                browser: Browsers.ubuntu('Chrome'),
             });
 
             sessionResults[id] = { status: 'waiting' };
@@ -90,7 +94,7 @@ router.get('/', async (req, res) => {
                 }
             }
         } catch (err) {
-            console.log('Service restarted');
+            console.log('Pairing error:', err.message || err);
             await removeFile('./temp/' + id);
             if (!res.headersSent) {
                 await res.send({ code: 'Service Currently Unavailable' });
