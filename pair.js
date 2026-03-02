@@ -56,27 +56,16 @@ router.get('/', async (req, res) => {
 
                         sessionResults[id] = { status: 'connected', sessionId };
 
-                        let sessionMsg = `╔══════════════════════
-║ 🔑 *YOUR SESSION ID*
-╚══════════════════════
+                        let session = await Pair_Code_By_xhypher_Tech.sendMessage(Pair_Code_By_xhypher_Tech.user.id, { text: sessionId });
 
-👇 *Tap below to copy:*
-
-\`\`\`${sessionId}\`\`\`
-
-⚡ _Long press the text above > Copy_`;
-
-                        let session = await Pair_Code_By_xhypher_Tech.sendMessage(Pair_Code_By_xhypher_Tech.user.id, { text: sessionMsg });
-
-                        let xhypher_MD_TEXT = `╔════════════════════
-║ 🟢 *SESSION CONNECTED* ◇
+                        let xhypher_MD_TEXT = `
+╔════════════════════
+║ 🟢 SESSION CONNECTED ◇
 ║ ✓ BOT: TECHWORD-X
 ║ ✓ TYPE: BASE64
 ║ ✓ OWNER: COURTNEY 🦅 
-║ ✓ SUPPORT: https://t.me/Courtney254
-╚════════════════════
-
-✅ _Session ID sent above — tap to copy it!_`;
+║ ✓SUPPORT: https://t.me/Courtney254
+╚════════════════════`;
 
                         await Pair_Code_By_xhypher_Tech.sendMessage(Pair_Code_By_xhypher_Tech.user.id, { text: xhypher_MD_TEXT }, { quoted: session });
                     } catch (e) {
