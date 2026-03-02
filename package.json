@@ -1,4 +1,6 @@
 {
+    "name": "techword-bot-pair",
+    "version": "1.0.0",
     "description": "tech-session",
     "main": "./index.js",
     "engines": {
