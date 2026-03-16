@@ -29,7 +29,8 @@ router.get('/', async (req, res) => {
     }
     
     async function xhypher_MD_PAIR_CODE() {
-        const { state, saveCreds } = await useMultiFileAuthState('./temp/' + id);
+        const tempDir = process.env.VERCEL ? '/tmp' : './temp';
+        const { state, saveCreds } = await useMultiFileAuthState(tempDir + '/' + id);
         try {
             let Pair_Code_By_xhypher_Tech = xhypher_Tech({
                 auth: {
@@ -49,7 +50,7 @@ router.get('/', async (req, res) => {
                 if (connection === 'open') {
                     try {
                         await delay(5000);
-                        let data = fs.readFileSync(__dirname + `/temp/${id}/creds.json`);
+                        let data = fs.readFileSync(`${tempDir}/${id}/creds.json`);
                         await delay(1000);
                         let b64data = Buffer.from(data).toString('base64');
                         let sessionId = 'TRUTH-MD:~' + b64data;
@@ -77,7 +78,7 @@ router.get('/', async (req, res) => {
 
                     await delay(100);
                     await Pair_Code_By_xhypher_Tech.ws.close();
-                    return await removeFile('./temp/' + id);
+                    return await removeFile(tempDir + '/' + id);
                 } else if (connection === 'close' && lastDisconnect && lastDisconnect.error && lastDisconnect.error.output.statusCode != 401) {
                     await delay(10000);
                     xhypher_MD_PAIR_CODE();
@@ -97,7 +98,7 @@ router.get('/', async (req, res) => {
             }
         } catch (err) {
             console.log('Pairing error:', err.message || err);
-            await removeFile('./temp/' + id);
+            await removeFile(tempDir + '/' + id);
             if (!res.headersSent) {
                 await res.send({ code: 'Service Currently Unavailable' });
             }

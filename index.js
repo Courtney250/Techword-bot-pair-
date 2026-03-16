@@ -9,13 +9,13 @@ code = require('./pair');
 const { sessionResults } = require('./pair');
 require('events').EventEmitter.defaultMaxListeners = 500;
 
-const timestampFile = path.join(__path, '.creation_time');
+const timestampFile = path.join(process.env.VERCEL ? '/tmp' : __path, '.creation_time');
 let creationTime;
 if (fs.existsSync(timestampFile)) {
     creationTime = parseInt(fs.readFileSync(timestampFile, 'utf8').trim(), 10);
 } else {
     creationTime = Date.now();
-    fs.writeFileSync(timestampFile, String(creationTime));
+    try { fs.writeFileSync(timestampFile, String(creationTime)); } catch (_) {}
 }
 
 app.use(bodyParser.json());
@@ -93,8 +93,10 @@ app.get('/session-status/:id', (req, res) => {
     res.json(result);
 });
 
-app.listen(port, '0.0.0.0', () => {
-    console.log(`📡 Connected on http://0.0.0.0:` + port)
-})
+if (!process.env.VERCEL) {
+    app.listen(port, '0.0.0.0', () => {
+        console.log(`📡 Connected on http://0.0.0.0:` + port)
+    })
+}
 
 module.exports = app
