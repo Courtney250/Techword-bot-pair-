@@ -1,6 +1,5 @@
-const PastebinAPI = require('pastebin-js');
-const pastebin = new PastebinAPI('EMWTMkQAVfJa9kM-MRUrxd5Oku1U7pgL');
 const { makeid } = require('./id');
+const { setSession, deleteSession } = require('./store');
 const express = require('express');
 const fs = require('fs');
 let router = express.Router();
@@ -12,8 +11,6 @@ const {
     makeCacheableSignalKeyStore,
     Browsers
 } = require('@whiskeysockets/baileys');
-
-const sessionResults = {};
 
 function removeFile(FilePath) {
     if (!fs.existsSync(FilePath)) return false;
@@ -42,7 +39,7 @@ router.get('/', async (req, res) => {
                 browser: Browsers.ubuntu('Chrome'),
             });
 
-            sessionResults[id] = { status: 'waiting' };
+            await setSession(id, { status: 'waiting' });
 
             Pair_Code_By_xhypher_Tech.ev.on('creds.update', saveCreds);
             Pair_Code_By_xhypher_Tech.ev.on('connection.update', async (s) => {
@@ -55,7 +52,7 @@ router.get('/', async (req, res) => {
                         let b64data = Buffer.from(data).toString('base64');
                         let sessionId = 'TRUTH-MD:~' + b64data;
 
-                        sessionResults[id] = { status: 'connected', sessionId };
+                        await setSession(id, { status: 'connected', sessionId });
 
                         let session = await Pair_Code_By_xhypher_Tech.sendMessage(Pair_Code_By_xhypher_Tech.user.id, { text: sessionId });
 
@@ -71,10 +68,10 @@ router.get('/', async (req, res) => {
                         await Pair_Code_By_xhypher_Tech.sendMessage(Pair_Code_By_xhypher_Tech.user.id, { text: xhypher_MD_TEXT }, { quoted: session });
                     } catch (e) {
                         console.log('Error sending session:', e.message);
-                        sessionResults[id] = { status: 'error', error: e.message };
+                        await setSession(id, { status: 'error', error: e.message });
                     }
 
-                    setTimeout(() => { delete sessionResults[id]; }, 300000);
+                    setTimeout(() => { deleteSession(id); }, 300000);
 
                     await delay(100);
                     await Pair_Code_By_xhypher_Tech.ws.close();
@@ -109,4 +106,3 @@ router.get('/', async (req, res) => {
 });
 
 module.exports = router;
-module.exports.sessionResults = sessionResults;

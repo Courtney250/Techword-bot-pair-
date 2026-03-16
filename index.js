@@ -6,7 +6,7 @@ const __path = __dirname;
 const bodyParser = require("body-parser");
 const port = process.env.PORT || 5000;
 code = require('./pair');
-const { sessionResults } = require('./pair');
+const { getSession } = require('./store');
 require('events').EventEmitter.defaultMaxListeners = 500;
 
 const timestampFile = path.join(process.env.VERCEL ? '/tmp' : __path, '.creation_time');
@@ -85,8 +85,8 @@ app.get('/uptime', (req, res) => {
     });
 });
 
-app.get('/session-status/:id', (req, res) => {
-    const result = sessionResults[req.params.id];
+app.get('/session-status/:id', async (req, res) => {
+    const result = await getSession(req.params.id);
     if (!result) {
         return res.json({ status: 'not_found' });
     }
