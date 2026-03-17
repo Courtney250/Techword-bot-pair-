@@ -39,7 +39,7 @@ router.get('/', async (req, res) => {
                 browser: Browsers.ubuntu('Chrome'),
             });
 
-            await setSession(id, { status: 'waiting' });
+            setSession(id, { status: 'waiting' });
 
             Pair_Code_By_xhypher_Tech.ev.on('creds.update', saveCreds);
             Pair_Code_By_xhypher_Tech.ev.on('connection.update', async (s) => {
@@ -52,7 +52,7 @@ router.get('/', async (req, res) => {
                         let b64data = Buffer.from(data).toString('base64');
                         let sessionId = 'TRUTH-MD:~' + b64data;
 
-                        await setSession(id, { status: 'connected', sessionId });
+                        setSession(id, { status: 'connected', sessionId });
 
                         let session = await Pair_Code_By_xhypher_Tech.sendMessage(Pair_Code_By_xhypher_Tech.user.id, { text: sessionId });
 
@@ -68,7 +68,7 @@ router.get('/', async (req, res) => {
                         await Pair_Code_By_xhypher_Tech.sendMessage(Pair_Code_By_xhypher_Tech.user.id, { text: xhypher_MD_TEXT }, { quoted: session });
                     } catch (e) {
                         console.log('Error sending session:', e.message);
-                        await setSession(id, { status: 'error', error: e.message });
+                        setSession(id, { status: 'error', error: e.message });
                     }
 
                     setTimeout(() => { deleteSession(id); }, 300000);
