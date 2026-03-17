@@ -1,7 +1,10 @@
 const inMemory = {};
 
-const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL;
-const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+// Auto-detect which env var holds the URL vs token (they may have been entered swapped)
+const _a = process.env.UPSTASH_REDIS_REST_URL || '';
+const _b = process.env.UPSTASH_REDIS_REST_TOKEN || '';
+const REDIS_URL   = _a.startsWith('https://') ? _a : _b.startsWith('https://') ? _b : _a;
+const REDIS_TOKEN = _a.startsWith('https://') ? _b : _b.startsWith('https://') ? _a : _b;
 
 async function redisCmd(...args) {
     const res = await fetch(`${REDIS_URL}/pipeline`, {
