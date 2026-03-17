@@ -1060,12 +1060,29 @@
     const musicBtn = document.getElementById('music-toggle');
     bgMusic.volume = 0.35;
 
-    musicBtn.addEventListener('click', () => {
+    function startMusic() {
+      bgMusic.play().then(() => {
+        musicBtn.classList.add('playing');
+        musicBtn.title = 'Pause Music';
+      }).catch(() => {});
+    }
+
+    // Try autoplay immediately
+    startMusic();
+
+    // Fallback: play on first user interaction if autoplay was blocked
+    const tryOnInteraction = () => {
+      if (bgMusic.paused) startMusic();
+      document.removeEventListener('click', tryOnInteraction);
+      document.removeEventListener('touchstart', tryOnInteraction);
+    };
+    document.addEventListener('click', tryOnInteraction);
+    document.addEventListener('touchstart', tryOnInteraction);
+
+    musicBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
       if (bgMusic.paused) {
-        bgMusic.play().then(() => {
-          musicBtn.classList.add('playing');
-          musicBtn.title = 'Pause Music';
-        }).catch(() => {});
+        startMusic();
       } else {
         bgMusic.pause();
         musicBtn.classList.remove('playing');
