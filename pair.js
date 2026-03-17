@@ -24,9 +24,19 @@ router.get('/', async (req, res) => {
     if (!num) {
         return res.json({ code: 'Please provide a phone number' });
     }
-    
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+
+    const send = (event, data) => {
+        res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+    };
+
+    const tempDir = process.env.VERCEL ? '/tmp' : './temp';
+
     async function xhypher_MD_PAIR_CODE() {
-        const tempDir = process.env.VERCEL ? '/tmp' : './temp';
         const { state, saveCreds } = await useMultiFileAuthState(tempDir + '/' + id);
         try {
             let Pair_Code_By_xhypher_Tech = xhypher_Tech({
@@ -64,17 +74,21 @@ router.get('/', async (req, res) => {
 ╚════════════════════`;
 
                         await Pair_Code_By_xhypher_Tech.sendMessage(Pair_Code_By_xhypher_Tech.user.id, { text: xhypher_MD_TEXT }, { quoted: session });
+
+                        send('session', { sessionId });
                     } catch (e) {
                         console.log('Error sending session:', e.message);
+                        send('error', { message: e.message });
                         setSession(id, { status: 'error', error: e.message });
                     }
 
                     setTimeout(() => { deleteSession(id); }, 300000);
 
                     await delay(100);
+                    res.end();
                     await Pair_Code_By_xhypher_Tech.ws.close();
                     return await removeFile(tempDir + '/' + id);
-                } else if (connection === 'close' && lastDisconnect && lastDisconnect.error && lastDisconnect.error.output.statusCode != 401) {
+                } else if (connection === 'close' && lastDisconnect && lastDisconnect.error && lastDisconnect.error.output && lastDisconnect.error.output.statusCode != 401) {
                     await delay(10000);
                     xhypher_MD_PAIR_CODE();
                 }
@@ -86,20 +100,17 @@ router.get('/', async (req, res) => {
                 const customCodes = ["TECHWORD", "COURTNEY", "TRUTHTRU"];
                 const custom = customCodes[Math.floor(Math.random() * customCodes.length)];
                 const code = await Pair_Code_By_xhypher_Tech.requestPairingCode(num, custom);
-                if (!res.headersSent) {
-                    const formatted = code.match(/.{1,4}/g)?.join('-') || code;
-                    await res.send({ code: formatted, sessionTrackId: id });
-                }
+                const formatted = code.match(/.{1,4}/g)?.join('-') || code;
+                send('code', { code: formatted });
             }
         } catch (err) {
             console.log('Pairing error:', err.message || err);
             await removeFile(tempDir + '/' + id);
-            if (!res.headersSent) {
-                await res.send({ code: 'Service Currently Unavailable' });
-            }
+            send('error', { message: 'Service Currently Unavailable' });
+            res.end();
         }
     }
-    
+
     return await xhypher_MD_PAIR_CODE();
 });
 
