@@ -85,8 +85,8 @@ app.get('/uptime', (req, res) => {
     });
 });
 
-app.get('/session-status/:id', async (req, res) => {
-    const result = await getSession(req.params.id);
+app.get('/session-status/:id', (req, res) => {
+    const result = getSession(req.params.id);
     if (!result) {
         return res.json({ status: 'not_found' });
     }
