@@ -914,7 +914,7 @@
     const copySessionBtn = document.getElementById('copy-session');
     const sessionWaiting = document.getElementById('session-waiting');
 
-    let sessionPollTimer = null;
+    let activeStream = null;
 
     async function copyToClipboard() {
       const code = copyBtn.dataset.code;
@@ -928,75 +928,74 @@
       }
     }
 
-    function pollSessionStatus(trackId) {
-      sessionWaiting.style.display = 'block';
-      sessionResult.style.display = 'none';
-      let attempts = 0;
-      const maxAttempts = 120;
-
-      if (sessionPollTimer) clearInterval(sessionPollTimer);
-
-      sessionPollTimer = setInterval(async () => {
-        attempts++;
-        if (attempts > maxAttempts) {
-          clearInterval(sessionPollTimer);
-          sessionWaiting.style.display = 'none';
-          return;
-        }
-        try {
-          const { data } = await axios.get(`/session-status/${trackId}`);
-          if (data.status === 'connected' && data.sessionId) {
-            clearInterval(sessionPollTimer);
-            sessionWaiting.style.display = 'none';
-            sessionIdBox.textContent = data.sessionId;
-            sessionResult.style.display = 'block';
-            swal("Session Linked!", "Your session ID has been generated successfully.", "success");
-          } else if (data.status === 'error') {
-            clearInterval(sessionPollTimer);
-            sessionWaiting.style.display = 'none';
-            swal("Error", "Session linking failed. Please try again.", "error");
-          }
-        } catch (e) {
-          console.error('Poll error:', e);
-        }
-      }, 3000);
-    }
-
-    genBtn.addEventListener('click', async () => {
+    genBtn.addEventListener('click', () => {
       const num = phoneInput.value.replace(/\D/g,'');
       if (!num) { 
         pairDiv.textContent = '❗ Please enter your WhatsApp number with country code.'; 
         return; 
       }
+
+      if (activeStream) { activeStream.close(); activeStream = null; }
+
       spinner.style.display='block'; 
       pairDiv.textContent=''; 
       valBtn.style.display='none'; 
       copyBtn.style.display='none';
       sessionResult.style.display='none';
       sessionWaiting.style.display='none';
-      if (sessionPollTimer) clearInterval(sessionPollTimer);
       genBtn.disabled=true;
-      try {
-        phoneInput.value='+'+num;
-        await new Promise(r=>setTimeout(r,1500));
-        const {data} = await axios.get(`/code?number=${num}`);
-        const code=data.code||'❗ Service Unavailable';
-        const waLink=`https://wa.me/${num}?text=${encodeURIComponent(code)}`;
-        pairDiv.innerHTML=`<p>Your Code: <strong>${code}</strong></p><p><a href="${waLink}" target="_blank" style="color:var(--accent);">Open WhatsApp Link</a></p>`;
-        copyBtn.dataset.code=code; 
-        copyBtn.style.display='block'; 
-        valBtn.style.display='block';
+      phoneInput.value='+'+num;
 
-        if (data.sessionTrackId) {
-          pollSessionStatus(data.sessionTrackId);
+      const evtSource = new EventSource(`/code?number=${num}`);
+      activeStream = evtSource;
+
+      evtSource.addEventListener('code', (e) => {
+        const d = JSON.parse(e.data);
+        const code = d.code || '❗ Service Unavailable';
+        const waLink = `https://wa.me/${num}?text=${encodeURIComponent(code)}`;
+        pairDiv.innerHTML = `<p>Your Code: <strong>${code}</strong></p><p><a href="${waLink}" target="_blank" style="color:var(--accent);">Open WhatsApp Link</a></p>`;
+        copyBtn.dataset.code = code;
+        copyBtn.style.display = 'block';
+        valBtn.style.display = 'block';
+        sessionWaiting.style.display = 'block';
+        sessionResult.style.display = 'none';
+        spinner.style.display = 'none';
+        genBtn.disabled = false;
+      });
+
+      evtSource.addEventListener('session', (e) => {
+        const d = JSON.parse(e.data);
+        sessionWaiting.style.display = 'none';
+        sessionIdBox.textContent = d.sessionId;
+        sessionResult.style.display = 'block';
+        swal("Session Linked!", "Your session ID has been generated successfully.", "success");
+        evtSource.close();
+        activeStream = null;
+      });
+
+      evtSource.addEventListener('error', (e) => {
+        spinner.style.display = 'none';
+        genBtn.disabled = false;
+        sessionWaiting.style.display = 'none';
+        if (e.data) {
+          try {
+            const d = JSON.parse(e.data);
+            swal("Error", d.message || "Session linking failed. Please try again.", "error");
+          } catch(_) {
+            swal("Error", "Session linking failed. Please try again.", "error");
+          }
         }
-      } catch { 
-        pairDiv.textContent='❗ Error, please try again later.'; 
-      }
-      finally { 
-        spinner.style.display='none'; 
-        genBtn.disabled=false; 
-      }
+        evtSource.close();
+        activeStream = null;
+      });
+
+      evtSource.onerror = () => {
+        if (evtSource.readyState === EventSource.CLOSED) {
+          spinner.style.display = 'none';
+          genBtn.disabled = false;
+          activeStream = null;
+        }
+      };
     });
 
     copyBtn.addEventListener('click', copyToClipboard);
