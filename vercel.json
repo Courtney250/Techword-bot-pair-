@@ -5,7 +5,8 @@
       "src": "index.js",
       "use": "@vercel/node",
       "config": {
-        "includeFiles": ["*.html"]
+        "includeFiles": ["*.html"],
+        "maxDuration": 60
       }
     }
   ],
@@ -14,10 +15,5 @@
       "src": "/(.*)",
       "dest": "index.js"
     }
-  ],
-  "functions": {
-    "index.js": {
-      "maxDuration": 60
-    }
-  }
+  ]
 }
