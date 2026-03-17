@@ -605,7 +605,7 @@
     <span id="season-icon">&#9748;</span>
     <span class="season-label" id="season-label">Rainy</span>
   </button>
-  <audio id="bg-music" loop>
+  <audio id="bg-music" loop autoplay muted>
     <source src="https://files.catbox.moe/nltrjp.mp3" type="audio/mpeg">
   </audio>
   <button class="music-toggle" id="music-toggle" title="Play Music">
@@ -1061,18 +1061,34 @@
     bgMusic.volume = 0.35;
 
     function startMusic() {
+      bgMusic.muted = false;
       bgMusic.play().then(() => {
         musicBtn.classList.add('playing');
         musicBtn.title = 'Pause Music';
-      }).catch(() => {});
+      }).catch(() => {
+        bgMusic.muted = true;
+      });
     }
 
-    // Try autoplay immediately
-    startMusic();
+    // Unmute immediately — muted autoplay is always allowed by browsers
+    // then we unmute right away so it plays with sound from the start
+    bgMusic.play().then(() => {
+      bgMusic.muted = false;
+      musicBtn.classList.add('playing');
+      musicBtn.title = 'Pause Music';
+    }).catch(() => {
+      bgMusic.muted = true;
+    });
 
-    // Fallback: play on first user interaction if autoplay was blocked
+    // Fallback: play with sound on first user interaction if still blocked
     const tryOnInteraction = () => {
-      if (bgMusic.paused) startMusic();
+      if (bgMusic.paused || bgMusic.muted) {
+        bgMusic.muted = false;
+        bgMusic.play().then(() => {
+          musicBtn.classList.add('playing');
+          musicBtn.title = 'Pause Music';
+        }).catch(() => {});
+      }
       document.removeEventListener('click', tryOnInteraction);
       document.removeEventListener('touchstart', tryOnInteraction);
     };
