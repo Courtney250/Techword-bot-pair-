@@ -46,10 +46,8 @@ router.get('/', async (req, res) => {
                 const { connection, lastDisconnect } = s;
                 if (connection === 'open') {
                     try {
-                        await delay(5000);
-                        let data = fs.readFileSync(`${tempDir}/${id}/creds.json`);
-                        await delay(1000);
-                        let b64data = Buffer.from(data).toString('base64');
+                        await delay(3000);
+                        let b64data = Buffer.from(JSON.stringify(state.creds)).toString('base64');
                         let sessionId = 'TRUTH-MD:~' + b64data;
 
                         setSession(id, { status: 'connected', sessionId });
